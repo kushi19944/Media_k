@@ -195,18 +195,20 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
   );
   await PullSelect.click();
   await RPA.sleep(4000);
-  // 目的のタブをクリックする
-  await TargetTabClick();
-  await RPA.sleep(500);
+  // 目的のタブに直接飛ぶ
+  const PageURL = await RPA.WebBrowser.getCurrentUrl();
+  const TargetURL = PageURL.replace('campaign?', 'campaign/creative?');
+  await RPA.WebBrowser.get(TargetURL);
+  await RPA.sleep(5000);
   // たまにページが表示されないことがあるため、60秒待って出ない時はスキップする
   try {
-    const CheckBox = await RPA.WebBrowser.wait(
-      RPA.WebBrowser.Until.elementsLocated({
-        className: 'checkbox-cell'
+    const ID_no1 = await RPA.WebBrowser.wait(
+      RPA.WebBrowser.Until.elementLocated({
+        css: '#listTableCreative > tbody > tr:nth-child(1) > td:nth-child(3)'
       }),
       60000
     );
-    await RPA.Logger.info('チェックボックスありました');
+    await RPA.Logger.info('ID出現しました');
   } catch {
     PageStatus[0] = 'bad';
     await PasteSheet('ページが開けません', SheetWorkingRow);
@@ -221,22 +223,10 @@ async function StatusChange(SheetData, SheetWorkingRow) {
   for (let v = 2; v < 11; v++) {
     const Allbrake = ['false'];
     for (let NewNumber = 1; NewNumber < 101; NewNumber++) {
-      try {
-        var ID = await RPA.WebBrowser.wait(
-          RPA.WebBrowser.Until.elementLocated({
-            css: `#listTableCreative > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`
-          }),
-          60000
-        );
-      } catch {
-        // 60秒待機してもIDが出現しない場合はスキップする
-        await PasteSheet('ページが開けません', SheetWorkingRow);
-        // 親ループもブレイクさせる
-        Allbrake[0] = 'true';
-        break;
-      }
+      var ID = await RPA.WebBrowser.findElementByCSSSelector(
+        `#listTableCreative > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`
+      );
       const IDText = await ID.getText();
-      //await RPA.Logger.info(IDText);
       if (IDText == SheetData[2]) {
         // 親ループもブレイクさせる
         Allbrake[0] = 'true';
@@ -244,7 +234,6 @@ async function StatusChange(SheetData, SheetWorkingRow) {
         await RPA.WebBrowser.scrollTo({
           selector: `#listTableCreative > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`
         });
-        await RPA.Logger.info('一致したID の場所へスクロールしました');
         await RPA.sleep(200);
         // 一致したIDの 使用広告 をJavaScriptで直接クリックする
         await RPA.WebBrowser.driver.executeScript(
