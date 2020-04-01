@@ -210,14 +210,18 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
     '#main > article > div.contents.ng-scope > section > div.list-ui-group.clear > ul.tab > li:nth-child(2)'
   );
   await RPA.WebBrowser.mouseClick(KoukokuGruop);
-  await RPA.sleep(500);
-  // たまにページが表示されないことがあるため、60秒待って出ない時はスキップする
+  // 目的のタブに直接飛ぶ
+  const PageURL = await RPA.WebBrowser.getCurrentUrl();
+  const TargetURL = PageURL.replace('campaign?', 'campaign/adgroup?');
+  await RPA.WebBrowser.get(TargetURL);
+  await RPA.sleep(3000);
+  // たまにページが表示されないことがあるため、30秒待って出ない時はスキップする
   try {
     const GenzaiNyuusatsu = await RPA.WebBrowser.wait(
       RPA.WebBrowser.Until.elementLocated({
         css: '#listTableAdGroup > thead > tr > th.current_daily_budget'
       }),
-      60000
+      30000
     );
   } catch {
     await RPA.Google.Spreadsheet.setValues({
@@ -242,23 +246,12 @@ async function TargetInputSelect(SheetData, SheetWorkingRow) {
   for (let v = 2; v < 11; v++) {
     const Allbrake = ['false'];
     for (let NewNumber = 1; NewNumber < 101; NewNumber++) {
-      try {
-        var ID = await RPA.WebBrowser.wait(
-          RPA.WebBrowser.Until.elementLocated({
-            css: `#listTableAdGroup > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`
-          }),
-          60000
-        );
-      } catch {
-        await RPA.Google.Spreadsheet.setValues({
-          spreadsheetId: `${SSID}`,
-          range: `${SSName1}!A${SheetWorkingRow[0]}:A${SheetWorkingRow[0]}`,
-          values: [['ページが開けません']]
-        });
-        // 親ループもブレイクさせる
-        Allbrake[0] = 'true';
-        break;
-      }
+      var ID = await RPA.WebBrowser.wait(
+        RPA.WebBrowser.Until.elementLocated({
+          css: `#listTableAdGroup > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`
+        }),
+        30000
+      );
       const IDText = await ID.getText();
       if (IDText == SheetData[2]) {
         // 親ループもブレイクさせる
