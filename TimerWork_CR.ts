@@ -44,8 +44,8 @@ async function Start() {
     await Work();
   } catch {
     // エラー発生時の処理
-    const DOM = await RPA.WebBrowser.driver.getPageSource();
-    await RPA.Logger.info(DOM);
+    //const DOM = await RPA.WebBrowser.driver.getPageSource();
+    //await RPA.Logger.info(DOM);
     await RPA.WebBrowser.takeScreenshot();
     await RPA.Logger.info(
       'エラー出現.スクリーンショット撮ってブラウザ終了します'
@@ -212,7 +212,7 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
   // 目的のタブに直接飛ぶ
   const PageURL = await RPA.WebBrowser.getCurrentUrl();
   await RPA.Logger.info(PageURL);
-  const TargetURL = PageURL.replace('campaign?', 'campaign/adgroup?');
+  const TargetURL = PageURL.replace('campaign?', 'campaign/creative?');
   await RPA.WebBrowser.get(TargetURL);
   // たまにページが表示されないことがあるため、60秒待って出ない時はスキップする
   try {
