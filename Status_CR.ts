@@ -223,8 +223,11 @@ async function StatusChange(SheetData, SheetWorkingRow) {
   for (let v = 2; v < 11; v++) {
     const Allbrake = ['false'];
     for (let NewNumber = 1; NewNumber < 101; NewNumber++) {
-      var ID = await RPA.WebBrowser.findElementByCSSSelector(
-        `#listTableCreative > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`
+      var ID = await RPA.WebBrowser.wait(
+        RPA.WebBrowser.Until.elementLocated({
+          css: `#listTableCreative > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`
+        }),
+        60000
       );
       const IDText = await ID.getText();
       if (IDText == SheetData[2]) {
