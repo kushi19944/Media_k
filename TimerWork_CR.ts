@@ -237,19 +237,9 @@ async function StatusChange(SheetData, SheetWorkingRow) {
   for (let v = 2; v < 11; v++) {
     const Allbrake = ['false'];
     for (let NewNumber = 1; NewNumber < 101; NewNumber++) {
-      try {
-        var ID = await RPA.WebBrowser.wait(
-          RPA.WebBrowser.Until.elementLocated({
-            css: `#listTableCreative > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`
-          }),
-          600000
-        );
-      } catch {
-        await PasteSheet('ページが開けません', SheetWorkingRow);
-        // 親ループもブレイクさせる
-        Allbrake[0] = 'true';
-        break;
-      }
+      var ID = await RPA.WebBrowser.findElementByCSSSelector(
+        `#listTableCreative > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`
+      );
       const IDText = await ID.getText();
       //await RPA.Logger.info(IDText);
       if (IDText == SheetData[2]) {
