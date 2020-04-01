@@ -214,19 +214,17 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
   );
   await RPA.Logger.info('URL直接飛ぶ');
   // たまにページが表示されないことがあるため、60秒待って出ない時はスキップする
-  for (let i = 0; i < 100; i++) {
-    await RPA.sleep(10000);
-    await RPA.Logger.info(i);
-    const ID_1 = await RPA.WebBrowser.findElementsByClassName(
-      '#listTableCreative > tbody > tr:nth-child(1) > td:nth-child(3)'
+  try {
+    const CheckBox = await RPA.WebBrowser.wait(
+      RPA.WebBrowser.Until.elementsLocated({
+        className: 'checkbox-cell'
+      }),
+      60000
     );
-    if (ID_1.length >= 1) {
-      break;
-    }
-    if (i == 50) {
-      PageStatus[0] = 'bad';
-      await PasteSheet('ページが開けません', SheetWorkingRow);
-    }
+    await RPA.Logger.info('チェックボックスありました');
+  } catch {
+    PageStatus[0] = 'bad';
+    await PasteSheet('ページが開けません', SheetWorkingRow);
   }
 }
 
