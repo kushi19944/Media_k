@@ -6,7 +6,7 @@ const SSID = process.env.Status_CP_SheetID;
 // スプレッドシート名
 const SSName1 = 'CR_時間指定';
 // Slack の通知オンオフ設定 trueなら通知され, falseなら通知オフ
-var SlackFlag = false;
+var SlackFlag = true;
 // ＊＊＊＊＊＊＊流用時の変更ポイント＊＊＊＊＊＊＊
 
 // サイバーSlack Bot 通知トークン・チャンネル
@@ -233,7 +233,6 @@ async function StatusChange(SheetData, SheetWorkingRow) {
         60000
       );
       const IDText = await ID.getText();
-      //await RPA.Logger.info(IDText);
       if (IDText == SheetData[2]) {
         // 親ループもブレイクさせる
         Allbrake[0] = 'true';
@@ -260,8 +259,8 @@ async function StatusChange(SheetData, SheetWorkingRow) {
           await RPA.WebBrowser.mouseClick(Yuukou);
           await RPA.sleep(300);
           try {
-            //await RPA.WebBrowser.mouseClick(ApplyButton);
-            await RPA.Logger.info('適用ボタン　押したと想定');
+            await RPA.WebBrowser.mouseClick(ApplyButton);
+            //await RPA.Logger.info('適用ボタン　押したと想定');
             await PasteSheet('完了', SheetWorkingRow);
             // 問題なければ完了報告を行う
             await SlackPost(
@@ -283,8 +282,8 @@ async function StatusChange(SheetData, SheetWorkingRow) {
           await RPA.WebBrowser.mouseClick(Mukou);
           await RPA.sleep(300);
           try {
-            //await RPA.WebBrowser.mouseClick(ApplyButton);
-            await RPA.Logger.info('適用ボタン　押したと想定');
+            await RPA.WebBrowser.mouseClick(ApplyButton);
+            //await RPA.Logger.info('適用ボタン　押したと想定');
             await PasteSheet('完了', SheetWorkingRow);
             // 問題なければ完了報告を行う
             await SlackPost(
