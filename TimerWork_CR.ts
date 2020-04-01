@@ -214,15 +214,16 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
   await RPA.Logger.info(PageURL);
   const TargetURL = PageURL.replace('campaign?', 'campaign/creative?');
   await RPA.WebBrowser.get(TargetURL);
+  await RPA.sleep(5000);
   // たまにページが表示されないことがあるため、60秒待って出ない時はスキップする
   try {
     const CheckBox = await RPA.WebBrowser.wait(
-      RPA.WebBrowser.Until.elementsLocated({
-        className: 'checkbox-cell'
+      RPA.WebBrowser.Until.elementLocated({
+        css: '#listTableCreative > tbody > tr:nth-child(1) > td:nth-child(3)'
       }),
       60000
     );
-    await RPA.Logger.info('チェックボックスありました');
+    await RPA.Logger.info('ID出現しました');
   } catch {
     PageStatus[0] = 'bad';
     await PasteSheet('ページが開けません', SheetWorkingRow);
