@@ -34,8 +34,8 @@ async function Start() {
     await Work();
   } catch {
     // エラー発生時の処理
-    const DOM = await RPA.WebBrowser.driver.getPageSource();
-    await RPA.Logger.info(DOM);
+    //const DOM = await RPA.WebBrowser.driver.getPageSource();
+    //await RPA.Logger.info(DOM);
     await RPA.WebBrowser.takeScreenshot();
     await RPA.Logger.info(
       'エラー出現.スクリーンショット撮ってブラウザ終了します'
