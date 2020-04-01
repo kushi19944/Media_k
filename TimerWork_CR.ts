@@ -208,7 +208,12 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
   await PullSelect.click();
   await RPA.sleep(4000);
   // 目的のタブをクリックする
-  await TargetTabClick();
+  //await TargetTabClick();
+  // 目的のタブに直接飛ぶ
+  const PageURL = await RPA.WebBrowser.getCurrentUrl();
+  await RPA.Logger.info(PageURL);
+  const TargetURL = PageURL.replace('campaign?', 'campaign/adgroup?');
+  await RPA.WebBrowser.get(TargetURL);
   // たまにページが表示されないことがあるため、60秒待って出ない時はスキップする
   try {
     const CheckBox = await RPA.WebBrowser.wait(
