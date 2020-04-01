@@ -5,7 +5,14 @@ import RPA from 'ts-rpa';
 const SSID = process.env.Status_CP_SheetID;
 // スプレッドシート名
 const SSName1 = process.env.Status_CR_SheetName;
+// Slack の通知オンオフ設定 trueなら通知され, falseなら通知オフ
+var SlackFlag = true;
 // ＊＊＊＊＊＊＊流用時の変更ポイント＊＊＊＊＊＊＊
+
+// サイバーSlack Bot 通知トークン・チャンネル
+const BotToken = process.env.CyberBotToken;
+const BotChannel = process.env.CyberBotChannel;
+const SlackText = ['【CRステータス変更】問題なく完了しました'];
 
 // スプレッドシートから読み込む行数を記載する
 const StartRow = 8;
@@ -31,6 +38,8 @@ async function Start() {
     expiryDate: parseInt(process.env.GOOGLE_EXPIRY_DATE, 10)
   });
   try {
+    // 開始時のSlack通知
+    await SlackPost(`【CRステータス変更】開始します`);
     await Work();
   } catch {
     // エラー発生時の処理
@@ -40,7 +49,10 @@ async function Start() {
     await RPA.Logger.info(
       'エラー出現.スクリーンショット撮ってブラウザ終了します'
     );
+    // エラー発生のSlack通知
+    SlackText[0] = `【CRステータス変更】エラー @Kushi Makoto_caad 確認してください`;
   } finally {
+    await SlackPost(`${SlackText}`);
     await RPA.WebBrowser.quit();
   }
 }
@@ -300,5 +312,19 @@ async function StatusChange(SheetData, SheetWorkingRow) {
       await PasteSheet('ID不一致', SheetWorkingRow);
       break;
     }
+  }
+}
+
+// Slack通知用の関数
+async function SlackPost(Text) {
+  // SlackFlagが trueなら Slackにメッセージ投稿
+  if (SlackFlag == true) {
+    await RPA.Slack.chat.postMessage({
+      channel: BotChannel,
+      token: BotToken,
+      text: `${Text}`,
+      icon_emoji: ':snowman:',
+      username: 'p1'
+    });
   }
 }
