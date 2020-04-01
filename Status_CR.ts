@@ -206,6 +206,7 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
       }),
       60000
     );
+    await RPA.Logger.info('チェックボックスありました');
   } catch {
     PageStatus[0] = 'bad';
     await PasteSheet('ページが開けません', SheetWorkingRow);
