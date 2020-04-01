@@ -208,11 +208,7 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
   await PullSelect.click();
   await RPA.sleep(4000);
   // 目的のタブをクリックする
-  //await TargetTabClick();
-  await RPA.WebBrowser.get(
-    'https://agency.aja.fm/#/campaign/creative?agency_id=602&advertiser_id=8753&from=2020-04-01'
-  );
-  await RPA.Logger.info('URL直接飛ぶ');
+  await TargetTabClick();
   // たまにページが表示されないことがあるため、60秒待って出ない時はスキップする
   try {
     const CheckBox = await RPA.WebBrowser.wait(
