@@ -17,7 +17,7 @@ async function Start() {
   });
   const FirstData = await RPA.Google.Spreadsheet.getValues({
     spreadsheetId: `${SSID}`,
-    range: `CR_時間指定!J8:K500`
+    range: `${SSName1}!J8:K500`
   });
   for (let i in FirstData) {
     FirstData[i].push(`${Number(i) + 8}`);
@@ -35,13 +35,15 @@ async function Start() {
   const a = FirstData[0][0];
   const DataList = [];
   for (let i in FirstData) {
-    await Replace(DataList, FirstData[i]);
+    // 文字を追加したり修正したりする関数
+    await ReplaceFunction(DataList, FirstData[i]);
+    await RPA.Logger.info(DataList);
     if (DataList[0] == result2) {
       if (DataList[1] == NowHours) {
         await RPA.Logger.info(`日時一致 ${DataList[2]} 行目`);
         await RPA.Google.Spreadsheet.setValues({
           spreadsheetId: `${SSID}`,
-          range: `CR_時間指定!A${DataList[2]}:A${DataList[2]}`,
+          range: `${SSName1}!A${DataList[2]}:A${DataList[2]}`,
           values: [[`作業対象`]]
         });
         await RPA.sleep(500);
@@ -53,28 +55,46 @@ async function Start() {
 Start();
 
 // 時間の文字を整えて、List に日付データを格納する
-async function Replace(DataList, SheetData) {
+async function ReplaceFunction(DataList, SheetData) {
   if (SheetData[0].includes('/') == true) {
-    if (SheetData[0].indexOf('0') == 0) {
-      const ReplaceText = SheetData[0].replace('/', '');
-      DataList[0] = ReplaceText;
+    const SplitData = SheetData[0].split('/');
+    const MonthData = [];
+    const DayData = [];
+    // 月が１文字なら 0 の文字を追加する
+    if (SplitData[0].length == 2) {
+      MonthData[0] = SplitData[0];
     }
-    // 文字の先頭に 0 が付いていなければ追加してリストに格納する
-    if (SheetData[0].indexOf('0') != 0) {
-      const ReplaceText = SheetData[0].replace('/', '');
-      DataList[0] = '0' + ReplaceText;
+    if (SplitData[0].length == 1) {
+      MonthData[0] = `0` + SplitData[0];
     }
+    // 日が１文字なら 0 の文字を追加する
+    if (SplitData[1].length == 2) {
+      DayData[0] = SplitData[1];
+    }
+    if (SplitData[1].length == 1) {
+      DayData[0] = `0` + SplitData[1];
+    }
+    DataList[0] = MonthData[0] + DayData[0];
   }
   if (SheetData[0].includes('-') == true) {
-    if (SheetData[0].indexOf('0') == 0) {
-      const ReplaceText = SheetData[0].replace('-', '');
-      DataList[0] = ReplaceText;
+    const SplitData = SheetData[0].split('-');
+    const MonthData = [];
+    const DayData = [];
+    // 月が１文字なら 0 の文字を追加する
+    if (SplitData[0].length == 2) {
+      MonthData[0] = SplitData[0];
     }
-    // 文字の先頭に 0 が付いていなければ追加してリストに格納する
-    if (SheetData[0].indexOf('0') != 0) {
-      const ReplaceText = SheetData[0].replace('-', '');
-      DataList[0] = '0' + ReplaceText;
+    if (SplitData[0].length == 1) {
+      MonthData[0] = `0` + SplitData[0];
     }
+    // 日が１文字なら 0 の文字を追加する
+    if (SplitData[1].length == 2) {
+      DayData[0] = SplitData[1];
+    }
+    if (SplitData[1].length == 1) {
+      DayData[0] = `0` + SplitData[1];
+    }
+    DataList[0] = MonthData[0] + DayData[0];
   }
   DataList[1] = SheetData[1];
   DataList[2] = SheetData[2];
