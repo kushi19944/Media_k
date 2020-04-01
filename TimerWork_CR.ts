@@ -20,15 +20,6 @@ const LastRow = 1000;
 // 一度だけログイン処理を行うためのフラッグ
 var LoginFlag = true;
 
-// AJA管理ツールの 目的のタブ をクリックする
-async function TargetTabClick() {
-  // クリエイティブ
-  const TargetTab = await RPA.WebBrowser.findElementByCSSSelector(
-    '#main > article > div.contents.ng-scope > section > div.list-ui-group.clear > ul.tab > li:nth-child(4)'
-  );
-  await RPA.WebBrowser.mouseClick(TargetTab);
-}
-
 async function Start() {
   // 実行前にダウンロードフォルダを全て削除する
   await RPA.File.rimraf({ dirPath: `${process.env.WORKSPACE_DIR}` });
@@ -207,17 +198,14 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
   );
   await PullSelect.click();
   await RPA.sleep(4000);
-  // 目的のタブをクリックする
-  //await TargetTabClick();
   // 目的のタブに直接飛ぶ
   const PageURL = await RPA.WebBrowser.getCurrentUrl();
-  await RPA.Logger.info(PageURL);
   const TargetURL = PageURL.replace('campaign?', 'campaign/creative?');
   await RPA.WebBrowser.get(TargetURL);
   await RPA.sleep(5000);
   // たまにページが表示されないことがあるため、60秒待って出ない時はスキップする
   try {
-    const CheckBox = await RPA.WebBrowser.wait(
+    const ID_no1 = await RPA.WebBrowser.wait(
       RPA.WebBrowser.Until.elementLocated({
         css: '#listTableCreative > tbody > tr:nth-child(1) > td:nth-child(3)'
       }),
@@ -250,7 +238,6 @@ async function StatusChange(SheetData, SheetWorkingRow) {
         await RPA.WebBrowser.scrollTo({
           selector: `#listTableCreative > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`
         });
-        await RPA.Logger.info('一致したID の場所へスクロールしました');
         await RPA.sleep(200);
         // 一致したIDの 使用広告 をJavaScriptで直接クリックする
         await RPA.WebBrowser.driver.executeScript(
