@@ -256,7 +256,7 @@ async function StatusChange(SheetData, SheetWorkingRow) {
           await RPA.WebBrowser.mouseClick(Yuukou);
           await RPA.sleep(300);
           try {
-            //await RPA.WebBrowser.mouseClick(ApplyButton);
+            await RPA.WebBrowser.mouseClick(ApplyButton);
             await PasteSheet('完了', SheetWorkingRow);
             await RPA.sleep(3000);
             break;
@@ -270,8 +270,8 @@ async function StatusChange(SheetData, SheetWorkingRow) {
           await RPA.WebBrowser.mouseClick(Mukou);
           await RPA.sleep(300);
           try {
-            //await RPA.WebBrowser.mouseClick(ApplyButton);
-            await RPA.Logger.info('適用ボタン　押したと想定');
+            await RPA.WebBrowser.mouseClick(ApplyButton);
+            //await RPA.Logger.info('適用ボタン　押したと想定');
             await PasteSheet('完了', SheetWorkingRow);
             await RPA.sleep(3000);
             break;
