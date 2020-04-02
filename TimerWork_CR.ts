@@ -35,7 +35,6 @@ async function Start() {
     expiryDate: parseInt(process.env.GOOGLE_EXPIRY_DATE, 10)
   });
   try {
-    await RPA.sleep(20000);
     await Work();
   } catch {
     // エラー発生時の処理
