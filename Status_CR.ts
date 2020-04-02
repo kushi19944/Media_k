@@ -232,7 +232,7 @@ async function StatusChange(SheetData, SheetWorkingRow) {
   // 次ページの移動に必要なため CurrentURL を取得しておく
   const ThisPageURL = await RPA.WebBrowser.getCurrentUrl();
   await RPA.Logger.info(ThisPageURL);
-  for (let v = 2; v < 11; v++) {
+  for (let v = 2; v < 12; v++) {
     const Allbrake = ['false'];
     for (let NewNumber = 1; NewNumber < 101; NewNumber++) {
       var ID = await RPA.WebBrowser.wait(
