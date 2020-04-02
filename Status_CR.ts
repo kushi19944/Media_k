@@ -17,14 +17,6 @@ const SlackText = ['【CRステータス変更】問題なく完了しました'
 // スプレッドシートから読み込む行数を記載する
 const StartRow = 8;
 const LastRow = 1000;
-// AJA管理ツールの 目的のタブ をクリックする
-async function TargetTabClick() {
-  // クリエイティブ
-  const TargetTab = await RPA.WebBrowser.findElementByCSSSelector(
-    '#main > article > div.contents.ng-scope > section > div.list-ui-group.clear > ul.tab > li:nth-child(4)'
-  );
-  await RPA.WebBrowser.mouseClick(TargetTab);
-}
 
 async function Start() {
   // 実行前にダウンロードフォルダを全て削除する
@@ -165,7 +157,6 @@ async function TabCreate() {
   await RPA.sleep(200);
   const tab = await RPA.WebBrowser.getAllWindowHandles();
   await RPA.WebBrowser.switchToWindow(tab[1]);
-  await RPA.Logger.info('新規タブに切り替えます');
   await RPA.sleep(500);
 }
 
@@ -195,6 +186,13 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
     } catch {}
   }
   await RPA.sleep(300);
+  // 期間を 今月 に変更する
+  const thisMonth = await RPA.WebBrowser.findElementByCSSSelector(
+    '#main > article > div.contents.ng-scope > section > div:nth-child(2) > div > ul.date > li.select-container > select > option:nth-child(6)'
+  );
+  await thisMonth.click();
+  await RPA.Logger.info(`期間を今月に変更しました`);
+  await RPA.sleep(5000);
   // タブ の位置まで スクロールする
   await RPA.WebBrowser.scrollTo({
     selector:
@@ -220,7 +218,24 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
       }),
       60000
     );
-    await RPA.Logger.info('ID出現しました');
+  } catch {
+    PageStatus[0] = 'bad';
+    await PasteSheet('ページが開けません', SheetWorkingRow);
+  }
+  await RPA.sleep(300);
+  // imp をJavaScriptで直接クリックする
+  await RPA.WebBrowser.driver.executeScript(
+    `document.querySelector('#listTableCreative > thead > tr > th.imp').children[0].children[1].children[0].click()`
+  );
+  await RPA.Logger.info('imp クリック完了');
+  await RPA.sleep(5000);
+  try {
+    const ID_no1 = await RPA.WebBrowser.wait(
+      RPA.WebBrowser.Until.elementLocated({
+        css: '#listTableCreative > tbody > tr:nth-child(1) > td:nth-child(3)'
+      }),
+      60000
+    );
   } catch {
     PageStatus[0] = 'bad';
     await PasteSheet('ページが開けません', SheetWorkingRow);
@@ -229,10 +244,7 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
 
 // ステータス変更 メインの処理
 async function StatusChange(SheetData, SheetWorkingRow) {
-  // 次ページの移動に必要なため CurrentURL を取得しておく
-  const ThisPageURL = await RPA.WebBrowser.getCurrentUrl();
-  await RPA.Logger.info(ThisPageURL);
-  for (let v = 2; v < 12; v++) {
+  for (let v = 2; v < 20; v++) {
     const Allbrake = ['false'];
     for (let NewNumber = 1; NewNumber < 101; NewNumber++) {
       var ID = await RPA.WebBrowser.wait(
@@ -269,6 +281,7 @@ async function StatusChange(SheetData, SheetWorkingRow) {
           await RPA.sleep(300);
           try {
             await RPA.WebBrowser.mouseClick(ApplyButton);
+            //await RPA.Logger.info('適用ボタン　押したと想定');
             await PasteSheet('完了', SheetWorkingRow);
             await RPA.sleep(3000);
             break;
@@ -296,10 +309,11 @@ async function StatusChange(SheetData, SheetWorkingRow) {
       }
       // 100件毎に検索してIDが一致しなければ次のページへいく
       if (NewNumber == 100) {
-        const NextPageURL = ThisPageURL + `&page=${v}`;
+        await RPA.WebBrowser.driver.executeScript(
+          `document.getElementsByClassName('pagination-next ng-scope')[0].children[0].click()`
+        );
         await RPA.Logger.info('次のページへ移動してID検索します');
-        await RPA.WebBrowser.get(NextPageURL);
-        await RPA.sleep(5000);
+        await RPA.sleep(7000);
         break;
       }
     }
@@ -307,7 +321,7 @@ async function StatusChange(SheetData, SheetWorkingRow) {
       await RPA.Logger.info('親ループブレイクします');
       break;
     }
-    if (v == 10) {
+    if (v == 19) {
       // IDが見つからない時は A列をエラー表示に変更
       await PasteSheet('ID不一致', SheetWorkingRow);
       break;
