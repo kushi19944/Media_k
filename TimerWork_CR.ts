@@ -9,6 +9,9 @@ const SSName1 = 'CR_時間指定';
 var SlackFlag = true;
 // ＊＊＊＊＊＊＊流用時の変更ポイント＊＊＊＊＊＊＊
 
+const AJA_ID = process.env.AJA_CAAD_RPA_ID;
+const AJA_PW = process.env.AJA_CAAD_RPA_PW;
+
 // サイバーSlack Bot 通知トークン・チャンネル
 const BotToken = process.env.CyberBotToken;
 const BotChannel = process.env.CyberBotChannel;
@@ -32,6 +35,7 @@ async function Start() {
     expiryDate: parseInt(process.env.GOOGLE_EXPIRY_DATE, 10)
   });
   try {
+    await RPA.sleep(20000);
     await Work();
   } catch {
     // エラー発生時の処理
@@ -86,8 +90,8 @@ async function AJALogin() {
     );
     const PWInput = await RPA.WebBrowser.findElementById('password');
     const LoginButton = await RPA.WebBrowser.findElementById('submit');
-    await RPA.WebBrowser.sendKeys(IDInput, [process.env.AJA_ROboost_ID]);
-    await RPA.WebBrowser.sendKeys(PWInput, [process.env.AJA_ROboost_PW]);
+    await RPA.WebBrowser.sendKeys(IDInput, [AJA_ID]);
+    await RPA.WebBrowser.sendKeys(PWInput, [AJA_PW]);
     await RPA.WebBrowser.mouseClick(LoginButton);
     while (0 == 0) {
       try {
@@ -98,7 +102,7 @@ async function AJALogin() {
         );
         const UserAriaText = await UserAria.getText();
         await RPA.Logger.info(UserAriaText);
-        if (UserAriaText.indexOf(process.env.AJA_ROboost_ID) >= 0) {
+        if (UserAriaText.indexOf(AJA_ID) >= 0) {
           await RPA.Logger.info('ログインできました');
           LoginFlag = false;
           break;
@@ -179,7 +183,7 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
         8000
       );
       const UserAriaText = await UserAria.getText();
-      if (UserAriaText.indexOf(process.env.AJA_ROboost_ID) >= 0) {
+      if (UserAriaText.indexOf(AJA_ID) >= 0) {
         await RPA.Logger.info('ユーザーエリア出現しました。次の処理に進みます');
         break;
       }
