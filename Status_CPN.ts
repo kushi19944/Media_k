@@ -7,6 +7,9 @@ const SSID = process.env.Status_CP_SheetID;
 const SSName1 = process.env.Status_CP_SheetName;
 // ＊＊＊＊＊＊＊流用時の変更ポイント＊＊＊＊＊＊＊
 
+const AJA_ID = process.env.AJA_CAAD_RPA_ID;
+const AJA_PW = process.env.AJA_CAAD_RPA_PW;
+
 // スプレッドシートから読み込む行数を記載する
 const StartRow = 8;
 const LastRow = 1000;
@@ -77,8 +80,8 @@ async function AJALogin() {
   );
   const PWInput = await RPA.WebBrowser.findElementById('password');
   const LoginButton = await RPA.WebBrowser.findElementById('submit');
-  await RPA.WebBrowser.sendKeys(IDInput, [process.env.AJA_ROboost_ID]);
-  await RPA.WebBrowser.sendKeys(PWInput, [process.env.AJA_ROboost_PW]);
+  await RPA.WebBrowser.sendKeys(IDInput, [AJA_ID]);
+  await RPA.WebBrowser.sendKeys(PWInput, [AJA_PW]);
   await RPA.WebBrowser.mouseClick(LoginButton);
   while (0 == 0) {
     try {
@@ -89,7 +92,7 @@ async function AJALogin() {
       );
       const UserAriaText = await UserAria.getText();
       await RPA.Logger.info(UserAriaText);
-      if (UserAriaText.indexOf(process.env.AJA_ROboost_ID) >= 0) {
+      if (UserAriaText.indexOf(AJA_ID) >= 0) {
         await RPA.Logger.info('ログインできました');
         break;
       }
@@ -168,7 +171,7 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
         8000
       );
       const UserAriaText = await UserAria.getText();
-      if (UserAriaText.indexOf(process.env.AJA_ROboost_ID) >= 0) {
+      if (UserAriaText.indexOf(AJA_ID) >= 0) {
         await RPA.Logger.info('ユーザーエリア出現しました。次の処理に進みます');
         break;
       }
