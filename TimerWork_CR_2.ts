@@ -187,6 +187,13 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
     } catch {}
   }
   await RPA.sleep(500);
+  // 期間を 今月 に変更する
+  const thisMonth = await RPA.WebBrowser.findElementByCSSSelector(
+    '#main > article > div.contents.ng-scope > section > div:nth-child(2) > div > ul.date > li.select-container > select > option:nth-child(6)'
+  );
+  await thisMonth.click();
+  await RPA.Logger.info(`期間を今月に変更しました`);
+  await RPA.sleep(5000);
   // タブ の位置まで スクロールする
   await RPA.WebBrowser.scrollTo({
     selector:
@@ -217,6 +224,24 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
     PageStatus[0] = 'bad';
     await PasteSheet('ページが開けません', SheetWorkingRow);
   }
+  await RPA.sleep(300);
+  // imp をJavaScriptで直接クリックする
+  await RPA.WebBrowser.driver.executeScript(
+    `document.querySelector('#listTableCreative > thead > tr > th.imp').children[0].children[1].children[0].click()`
+  );
+  await RPA.Logger.info('imp クリック完了');
+  await RPA.sleep(5000);
+  try {
+    const ID_no1 = await RPA.WebBrowser.wait(
+      RPA.WebBrowser.Until.elementLocated({
+        css: '#listTableCreative > tbody > tr:nth-child(1) > td:nth-child(3)'
+      }),
+      60000
+    );
+  } catch {
+    PageStatus[0] = 'bad';
+    await PasteSheet('ページが開けません', SheetWorkingRow);
+  }
 }
 
 // ステータス変更 メインの処理
@@ -224,7 +249,7 @@ async function StatusChange(SheetData, SheetWorkingRow) {
   // 次ページの移動に必要なため CurrentURL を取得しておく
   const ThisPageURL = await RPA.WebBrowser.getCurrentUrl();
   await RPA.Logger.info(ThisPageURL);
-  for (let v = 2; v < 12; v++) {
+  for (let v = 2; v < 20; v++) {
     const Allbrake = ['false'];
     for (let NewNumber = 1; NewNumber < 101; NewNumber++) {
       var ID = await RPA.WebBrowser.wait(
@@ -305,9 +330,10 @@ async function StatusChange(SheetData, SheetWorkingRow) {
       }
       // 100件毎に検索してIDが一致しなければ次のページへいく
       if (NewNumber == 100) {
-        const NextPageURL = ThisPageURL + `&page=${v}`;
+        await RPA.WebBrowser.driver.executeScript(
+          `document.getElementsByClassName('pagination-next ng-scope')[0].children[0].click()`
+        );
         await RPA.Logger.info('次のページへ移動してID検索します');
-        await RPA.WebBrowser.get(NextPageURL);
         await RPA.sleep(7000);
         break;
       }
