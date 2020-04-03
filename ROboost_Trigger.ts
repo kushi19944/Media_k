@@ -240,12 +240,23 @@ async function TargetInputSelect(SheetData, SheetWorkingRow) {
   for (let v = 2; v < 12; v++) {
     const Allbrake = ['false'];
     for (let NewNumber = 1; NewNumber < 101; NewNumber++) {
-      var ID = await RPA.WebBrowser.wait(
-        RPA.WebBrowser.Until.elementLocated({
-          css: `#listTableAdGroup > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`
-        }),
-        30000
-      );
+      try {
+        var ID = await RPA.WebBrowser.wait(
+          RPA.WebBrowser.Until.elementLocated({
+            css: `#listTableAdGroup > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`
+          }),
+          30000
+        );
+      } catch {
+        await RPA.Google.Spreadsheet.setValues({
+          spreadsheetId: `${SSID}`,
+          range: `${SSName1}!A${SheetWorkingRow[0]}:A${SheetWorkingRow[0]}`,
+          values: [['ID不一致']]
+        });
+        // 親ループもブレイクさせる
+        Allbrake[0] = 'true';
+        break;
+      }
       const IDText = await ID.getText();
       if (IDText == SheetData[2]) {
         // 親ループもブレイクさせる
@@ -278,10 +289,11 @@ async function TargetInputSelect(SheetData, SheetWorkingRow) {
       }
       // 100件毎に検索してIDが一致しなければ次のページへいく
       if (NewNumber == 100) {
-        const NextPageURL = ThisPageURL + `&page=${v}`;
+        await RPA.WebBrowser.driver.executeScript(
+          `document.getElementsByClassName('pagination-next ng-scope')[0].children[0].click()`
+        );
         await RPA.Logger.info('次のページへ移動してID検索します');
-        await RPA.WebBrowser.get(NextPageURL);
-        await RPA.sleep(7000);
+        await RPA.sleep(5000);
         break;
       }
     }
