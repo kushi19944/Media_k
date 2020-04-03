@@ -105,7 +105,6 @@ async function TabCreate() {
   await RPA.WebBrowser.driver.executeScript(`window.open('')`);
   await RPA.sleep(200);
   const tab = await RPA.WebBrowser.getAllWindowHandles();
-  await RPA.Logger.info(tab);
   await RPA.WebBrowser.switchToWindow(tab[1]);
   await RPA.Logger.info('新規タブに切り替えます');
   await RPA.sleep(500);
@@ -114,7 +113,6 @@ async function TabCreate() {
 // Tabを閉じて1番目に切り替える
 async function TabClose() {
   const tab = await RPA.WebBrowser.getAllWindowHandles();
-  await RPA.Logger.info(tab);
   await RPA.WebBrowser.switchToWindow(tab[0]);
   await RPA.WebBrowser.closeWindow(tab[1]);
   await RPA.sleep(500);
@@ -176,7 +174,6 @@ async function AJALogin() {
         5000
       );
       const UserAriaText = await UserAria.getText();
-      await RPA.Logger.info(UserAriaText);
       if (UserAriaText.indexOf(AJA_ID) >= 0) {
         await RPA.Logger.info('ログインできました');
         break;
@@ -186,7 +183,6 @@ async function AJALogin() {
 }
 
 async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
-  await RPA.Logger.info(`このURLに飛びます ${SheetData[1]}`);
   await RPA.WebBrowser.get(SheetData[1]);
   while (0 == 0) {
     try {
@@ -196,7 +192,6 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
         8000
       );
       const UserAriaText = await UserAria.getText();
-      await RPA.Logger.info(UserAriaText);
       if (UserAriaText.indexOf(AJA_ID) >= 0) {
         await RPA.Logger.info('ユーザーエリア出現しました。次の処理に進みます');
         break;
@@ -204,10 +199,15 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
     } catch {}
   }
   await RPA.sleep(300);
-  // 目的のタブに直接飛ぶ
-  const PageURL = await RPA.WebBrowser.getCurrentUrl();
-  const TargetURL = PageURL.replace('campaign?', 'campaign/adgroup?');
-  await RPA.WebBrowser.get(TargetURL);
+  // タブの場所へスクロール移動
+  await RPA.WebBrowser.scrollTo({
+    selector: `#main > article > div.contents.ng-scope > section > div.list-ui-group.clear > ul.tab`
+  });
+  await RPA.sleep(200);
+  // 目的のタブ(広告グループ)を JavaScriptでクリック
+  await RPA.WebBrowser.driver.executeScript(
+    `document.getElementsByClassName('tab')[0].children[1].children[0].click()`
+  );
   await RPA.sleep(3000);
   // たまにページが表示されないことがあるため、30秒待って出ない時はスキップする
   try {
@@ -237,7 +237,7 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
 async function TargetInputSelect(SheetData, SheetWorkingRow) {
   const ThisPageURL = await RPA.WebBrowser.getCurrentUrl();
   await RPA.Logger.info(ThisPageURL);
-  for (let v = 2; v < 11; v++) {
+  for (let v = 2; v < 12; v++) {
     const Allbrake = ['false'];
     for (let NewNumber = 1; NewNumber < 101; NewNumber++) {
       var ID = await RPA.WebBrowser.wait(
@@ -289,7 +289,7 @@ async function TargetInputSelect(SheetData, SheetWorkingRow) {
       await RPA.Logger.info('親ループブレイクします');
       break;
     }
-    if (v == 10) {
+    if (v == 11) {
       await RPA.Google.Spreadsheet.setValues({
         spreadsheetId: `${SSID}`,
         range: `${SSName1}!A${SheetWorkingRow[0]}:A${SheetWorkingRow[0]}`,
