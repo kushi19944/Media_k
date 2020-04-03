@@ -204,15 +204,6 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
     } catch {}
   }
   await RPA.sleep(300);
-  await RPA.WebBrowser.scrollTo({
-    selector:
-      '#main > article > div.contents.ng-scope > section > div.list-ui-group.clear > ul.tab'
-  });
-  await RPA.sleep(200);
-  const KoukokuGruop = await RPA.WebBrowser.findElementByCSSSelector(
-    '#main > article > div.contents.ng-scope > section > div.list-ui-group.clear > ul.tab > li:nth-child(2)'
-  );
-  await RPA.WebBrowser.mouseClick(KoukokuGruop);
   // 目的のタブに直接飛ぶ
   const PageURL = await RPA.WebBrowser.getCurrentUrl();
   const TargetURL = PageURL.replace('campaign?', 'campaign/adgroup?');
