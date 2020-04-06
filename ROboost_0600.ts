@@ -30,7 +30,7 @@ async function Start() {
     //accessToken: process.env.GOOGLE_ACCESS_TOKEN,
     refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
     tokenType: 'Bearer',
-    expiryDate: parseInt(process.env.GOOGLE_EXPIRY_DATE, 10)
+    expiryDate: parseInt(process.env.GOOGLE_EXPIRY_DATE, 10),
   });
   const firstSheetData = [];
   const SheetWorkingRow = [];
@@ -95,7 +95,7 @@ async function SlackPost(Text) {
       token: BotToken,
       text: `${Text}`,
       icon_emoji: ':snowman:',
-      username: 'p1'
+      username: 'p1',
     });
   }
 }
@@ -121,7 +121,7 @@ async function TabClose() {
 async function ReadSheet(SheetData, LoopFlag, SheetWorkingRow) {
   const FirstData = await RPA.Google.Spreadsheet.getValues({
     spreadsheetId: `${SSID}`,
-    range: `${SSName1}!A${String(StartRow)}:D${String(LastRow)}`
+    range: `${SSName1}!A${String(StartRow)}:D${String(LastRow)}`,
   });
   // B列にURL と D列に調整入札値が 入っていてかつ、A列が空白 の行だけ取得する
   for (let i in FirstData) {
@@ -147,7 +147,7 @@ async function ReadSheet(SheetData, LoopFlag, SheetWorkingRow) {
         await RPA.Google.Spreadsheet.setValues({
           spreadsheetId: `${SSID}`,
           range: `${SSName1}!A${SheetWorkingRow[0]}:A${SheetWorkingRow[0]}`,
-          values: [['作業中']]
+          values: [['作業中']],
         });
         break;
       }
@@ -166,7 +166,7 @@ async function AJALogin() {
   await RPA.WebBrowser.sendKeys(IDInput, [AJA_ID]);
   await RPA.WebBrowser.sendKeys(PWInput, [AJA_PW]);
   await RPA.WebBrowser.mouseClick(LoginButton);
-  while (0 == 0) {
+  for (let i = 0; i < 100; i++) {
     try {
       await RPA.sleep(500);
       const UserAria = await RPA.WebBrowser.wait(
@@ -179,6 +179,13 @@ async function AJALogin() {
         break;
       }
     } catch {}
+    if (i == 90) {
+      await SlackPost(
+        `インフィード入札額 ${SlackText}調整 ログインエラー. IDパスワードの確認をお願いします`
+      );
+      await RPA.sleep(1000);
+      process.exit(0);
+    }
   }
 }
 
@@ -201,7 +208,7 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
   await RPA.sleep(300);
   // タブの場所へスクロール移動
   await RPA.WebBrowser.scrollTo({
-    selector: `#main > article > div.contents.ng-scope > section > div.list-ui-group.clear > ul.tab`
+    selector: `#main > article > div.contents.ng-scope > section > div.list-ui-group.clear > ul.tab`,
   });
   await RPA.sleep(200);
   // 目的のタブ(広告グループ)を JavaScriptでクリック
@@ -213,7 +220,7 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
   try {
     const GenzaiNyuusatsu = await RPA.WebBrowser.wait(
       RPA.WebBrowser.Until.elementLocated({
-        css: '#listTableAdGroup > thead > tr > th.current_daily_budget'
+        css: '#listTableAdGroup > thead > tr > th.current_daily_budget',
       }),
       30000
     );
@@ -221,7 +228,7 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
     await RPA.Google.Spreadsheet.setValues({
       spreadsheetId: `${SSID}`,
       range: `${SSName1}!A${SheetWorkingRow[0]}:A${SheetWorkingRow[0]}`,
-      values: [['ページが開けません']]
+      values: [['ページが開けません']],
     });
     PageStatus[0] = 'bad';
     return;
@@ -243,7 +250,7 @@ async function TargetInputSelect(SheetData, SheetWorkingRow) {
       try {
         var ID = await RPA.WebBrowser.wait(
           RPA.WebBrowser.Until.elementLocated({
-            css: `#listTableAdGroup > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`
+            css: `#listTableAdGroup > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`,
           }),
           30000
         );
@@ -251,7 +258,7 @@ async function TargetInputSelect(SheetData, SheetWorkingRow) {
         await RPA.Google.Spreadsheet.setValues({
           spreadsheetId: `${SSID}`,
           range: `${SSName1}!A${SheetWorkingRow[0]}:A${SheetWorkingRow[0]}`,
-          values: [['ID不一致']]
+          values: [['ID不一致']],
         });
         // 親ループもブレイクさせる
         Allbrake[0] = 'true';
@@ -263,7 +270,7 @@ async function TargetInputSelect(SheetData, SheetWorkingRow) {
         Allbrake[0] = 'true';
         await RPA.Logger.info('ID一致しました');
         await RPA.WebBrowser.scrollTo({
-          selector: `#listTableAdGroup > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`
+          selector: `#listTableAdGroup > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`,
         });
         await RPA.sleep(300);
         const YenClick = await RPA.WebBrowser.findElementByCSSSelector(
@@ -283,7 +290,7 @@ async function TargetInputSelect(SheetData, SheetWorkingRow) {
         await RPA.Google.Spreadsheet.setValues({
           spreadsheetId: `${SSID}`,
           range: `${SSName1}!A${SheetWorkingRow[0]}:A${SheetWorkingRow[0]}`,
-          values: [['完了']]
+          values: [['完了']],
         });
         break;
       }
@@ -305,7 +312,7 @@ async function TargetInputSelect(SheetData, SheetWorkingRow) {
       await RPA.Google.Spreadsheet.setValues({
         spreadsheetId: `${SSID}`,
         range: `${SSName1}!A${SheetWorkingRow[0]}:A${SheetWorkingRow[0]}`,
-        values: [['ID不一致']]
+        values: [['ID不一致']],
       });
       break;
     }
