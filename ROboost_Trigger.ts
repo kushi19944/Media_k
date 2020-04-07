@@ -37,6 +37,8 @@ async function Start() {
   const LoopFlag = ['true'];
   // Slackの通知用フラッグ goodなら完了報告。errorならエラー報告を行う
   const WorkStatus = ['good'];
+  // リスト100件表示させるフラグ
+  const List100Flag = [false];
   try {
     await SlackPost(`インフィード入札額 ${SlackText}調整 開始します`);
     await AJALogin();
@@ -50,7 +52,7 @@ async function Start() {
       if (LoopFlag[0] == 'true') {
         await TabCreate();
         const PageStatus = ['good'];
-        await PageMoveing(SheetData, SheetWorkingRow, PageStatus);
+        await PageMoveing(SheetData, SheetWorkingRow, PageStatus, List100Flag);
         if (PageStatus[0] == 'good') {
           await TargetInputSelect(SheetData, SheetWorkingRow);
         }
@@ -106,7 +108,6 @@ async function TabCreate() {
   await RPA.sleep(200);
   const tab = await RPA.WebBrowser.getAllWindowHandles();
   await RPA.WebBrowser.switchToWindow(tab[1]);
-  await RPA.Logger.info('新規タブに切り替えます');
   await RPA.sleep(500);
 }
 
@@ -189,21 +190,45 @@ async function AJALogin() {
   }
 }
 
-async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
+async function PageMoveing(
+  SheetData,
+  SheetWorkingRow,
+  PageStatus,
+  List100Flag
+) {
   await RPA.WebBrowser.get(SheetData[1]);
-  while (0 == 0) {
+  for (let i = 0; i < 20; i++) {
     try {
       await RPA.sleep(500);
       const UserAria = await RPA.WebBrowser.wait(
         RPA.WebBrowser.Until.elementLocated({ className: 'user-area' }),
-        8000
+        5000
       );
       const UserAriaText = await UserAria.getText();
       if (UserAriaText.indexOf(AJA_ID) >= 0) {
-        await RPA.Logger.info('ユーザーエリア出現しました。次の処理に進みます');
+        await RPA.Logger.info('ユーザーエリア出現しました');
+        if (List100Flag[0] == false) {
+          List100Flag[0] = true;
+          // 100件表示させる
+          const PullSelect = await RPA.WebBrowser.findElementByCSSSelector(
+            `#main > article > div.contents.ng-scope > section > div:nth-child(7) > div > div:nth-child(2) > div > dl > dd > select > option:nth-child(4)`
+          );
+          await PullSelect.click();
+          await RPA.sleep(4000);
+          await RPA.Logger.info('表示数を100に変更します');
+        }
         break;
       }
     } catch {}
+    if (i == 19) {
+      await RPA.Google.Spreadsheet.setValues({
+        spreadsheetId: `${SSID}`,
+        range: `${SSName1}!A${SheetWorkingRow[0]}:A${SheetWorkingRow[0]}`,
+        values: [['ページが開けません']],
+      });
+      PageStatus[0] = 'bad';
+      return;
+    }
   }
   await RPA.sleep(300);
   // タブの場所へスクロール移動
@@ -233,18 +258,10 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
     PageStatus[0] = 'bad';
     return;
   }
-  // 100件表示させる
-  const PullSelect = await RPA.WebBrowser.findElementByCSSSelector(
-    `#main > article > div.contents.ng-scope > section > div:nth-child(7) > div > div:nth-child(2) > div > dl > dd > select > option:nth-child(4)`
-  );
-  await PullSelect.click();
-  await RPA.sleep(4000);
 }
 
 async function TargetInputSelect(SheetData, SheetWorkingRow) {
-  const ThisPageURL = await RPA.WebBrowser.getCurrentUrl();
-  await RPA.Logger.info(ThisPageURL);
-  for (let v = 2; v < 12; v++) {
+  for (let v = 0; v < 20; v++) {
     const Allbrake = ['false'];
     for (let NewNumber = 1; NewNumber < 101; NewNumber++) {
       try {
@@ -262,7 +279,7 @@ async function TargetInputSelect(SheetData, SheetWorkingRow) {
         });
         // 親ループもブレイクさせる
         Allbrake[0] = 'true';
-        break;
+        return;
       }
       const IDText = await ID.getText();
       if (IDText == SheetData[2]) {
@@ -272,6 +289,7 @@ async function TargetInputSelect(SheetData, SheetWorkingRow) {
         await RPA.WebBrowser.scrollTo({
           selector: `#listTableAdGroup > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`,
         });
+        await RPA.Logger.info('入力したと想定');
         await RPA.sleep(300);
         const YenClick = await RPA.WebBrowser.findElementByCSSSelector(
           `#listTableAdGroup > tbody > tr:nth-child(${NewNumber}) > td.numeric.auto-bid-status > div > editable-box > form > div > div.numeric.ng-scope > a`
@@ -292,7 +310,7 @@ async function TargetInputSelect(SheetData, SheetWorkingRow) {
           range: `${SSName1}!A${SheetWorkingRow[0]}:A${SheetWorkingRow[0]}`,
           values: [['完了']],
         });
-        break;
+        return;
       }
       // 100件毎に検索してIDが一致しなければ次のページへいく
       if (NewNumber == 100) {
@@ -300,7 +318,13 @@ async function TargetInputSelect(SheetData, SheetWorkingRow) {
           `document.getElementsByClassName('pagination-next ng-scope')[0].children[0].click()`
         );
         await RPA.Logger.info('次のページへ移動してID検索します');
-        await RPA.sleep(5000);
+        await RPA.sleep(1000);
+        var ID = await RPA.WebBrowser.wait(
+          RPA.WebBrowser.Until.elementLocated({
+            css: `#listTableAdGroup > tbody > tr:nth-child(1) > td:nth-child(3)`,
+          }),
+          10000
+        );
         break;
       }
     }
@@ -308,13 +332,13 @@ async function TargetInputSelect(SheetData, SheetWorkingRow) {
       await RPA.Logger.info('親ループブレイクします');
       break;
     }
-    if (v == 11) {
+    if (v == 19) {
       await RPA.Google.Spreadsheet.setValues({
         spreadsheetId: `${SSID}`,
         range: `${SSName1}!A${SheetWorkingRow[0]}:A${SheetWorkingRow[0]}`,
         values: [['ID不一致']],
       });
-      break;
+      return;
     }
   }
 }
