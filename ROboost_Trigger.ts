@@ -208,20 +208,25 @@ async function PageMoving(SheetData, SheetWorkingRow, PageStatus, List100Flag) {
 async function TargetInputSelect(SheetData, SheetWorkingRow) {
   for (let v = 0; v < 20; v++) {
     const Allbrake = ['false'];
-    try {
-      await RPA.sleep(1000);
-      // IDが出現するまで待機
-      const AdgID = await RPA.WebBrowser.wait(
-        RPA.WebBrowser.Until.elementLocated({
-          css: '#listTableAdGroup > tbody > tr:nth-child(1) > td:nth-child(3)',
-        }),
-        30000
-      );
-    } catch {
-      await SetValues_Function(SheetWorkingRow, `ID表示されませんでした`);
-      // 親ループもブレイクさせる
-      Allbrake[0] = 'true';
-      break;
+    for (let i = 0; i < 5; i++) {
+      try {
+        // IDが出現するまで待機 (4回リトライ)
+        const AdgID = await RPA.WebBrowser.wait(
+          RPA.WebBrowser.Until.elementLocated({
+            css:
+              '#listTableAdGroup > tbody > tr:nth-child(1) > td:nth-child(3)',
+          }),
+          5000
+        );
+      } catch {
+        // 4回リトライしてもID出ない場合はスキップ
+        if (i == 4) {
+          await SetValues_Function(SheetWorkingRow, `ID表示されませんでした`);
+          // 親ループもブレイクさせる
+          Allbrake[0] = 'true';
+          break;
+        }
+      }
     }
     for (let NewNumber = 1; NewNumber < 101; NewNumber++) {
       try {
