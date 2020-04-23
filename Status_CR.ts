@@ -30,7 +30,7 @@ async function Start() {
     //accessToken: process.env.GOOGLE_ACCESS_TOKEN,
     refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
     tokenType: 'Bearer',
-    expiryDate: parseInt(process.env.GOOGLE_EXPIRY_DATE, 10)
+    expiryDate: parseInt(process.env.GOOGLE_EXPIRY_DATE, 10),
   });
   try {
     // 開始時のSlack通知
@@ -115,7 +115,7 @@ async function AJALogin() {
 async function ReadSheet(SheetData, LoopFlag, SheetWorkingRow) {
   const FirstData = await RPA.Google.Spreadsheet.getValues({
     spreadsheetId: `${SSID}`,
-    range: `${SSName1}!A${String(StartRow)}:D${String(LastRow)}`
+    range: `${SSName1}!A${String(StartRow)}:D${String(LastRow)}`,
   });
   // B列にURL と D列に調整入札値が 入っていてかつ、A列が空白 の行だけ取得する
   for (let i in FirstData) {
@@ -150,7 +150,7 @@ async function PasteSheet(StatusText, SheetWorkingRow) {
   await RPA.Google.Spreadsheet.setValues({
     spreadsheetId: `${SSID}`,
     range: `${SSName1}!A${SheetWorkingRow[0]}:A${SheetWorkingRow[0]}`,
-    values: [[StatusText]]
+    values: [[StatusText]],
   });
 }
 
@@ -199,7 +199,7 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
   // タブ の位置まで スクロールする
   await RPA.WebBrowser.scrollTo({
     selector:
-      '#main > article > div.contents.ng-scope > section > div.list-ui-group.clear > ul.tab'
+      '#main > article > div.contents.ng-scope > section > div.list-ui-group.clear > ul.tab',
   });
   await RPA.sleep(200);
   // 100件表示させる
@@ -217,9 +217,9 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
   try {
     const ID_no1 = await RPA.WebBrowser.wait(
       RPA.WebBrowser.Until.elementLocated({
-        css: '#listTableCreative > tbody > tr:nth-child(1) > td:nth-child(3)'
+        css: '#listTableCreative > tbody > tr:nth-child(1) > td:nth-child(3)',
       }),
-      60000
+      180000
     );
   } catch {
     PageStatus[0] = 'bad';
@@ -235,9 +235,9 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
   try {
     const ID_no1 = await RPA.WebBrowser.wait(
       RPA.WebBrowser.Until.elementLocated({
-        css: '#listTableCreative > tbody > tr:nth-child(1) > td:nth-child(3)'
+        css: '#listTableCreative > tbody > tr:nth-child(1) > td:nth-child(3)',
       }),
-      60000
+      180000
     );
   } catch {
     PageStatus[0] = 'bad';
@@ -252,9 +252,9 @@ async function StatusChange(SheetData, SheetWorkingRow) {
     for (let NewNumber = 1; NewNumber < 101; NewNumber++) {
       var ID = await RPA.WebBrowser.wait(
         RPA.WebBrowser.Until.elementLocated({
-          css: `#listTableCreative > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`
+          css: `#listTableCreative > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`,
         }),
-        60000
+        180000
       );
       const IDText = await ID.getText();
       if (IDText == SheetData[2]) {
@@ -262,7 +262,7 @@ async function StatusChange(SheetData, SheetWorkingRow) {
         Allbrake[0] = 'true';
         await RPA.Logger.info('ID一致しました');
         await RPA.WebBrowser.scrollTo({
-          selector: `#listTableCreative > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`
+          selector: `#listTableCreative > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`,
         });
         await RPA.sleep(200);
         // 一致したIDの 使用広告 をJavaScriptで直接クリックする
@@ -341,7 +341,7 @@ async function SlackPost(Text) {
       token: BotToken,
       text: `${Text}`,
       icon_emoji: ':snowman:',
-      username: 'p1'
+      username: 'p1',
     });
   }
 }
