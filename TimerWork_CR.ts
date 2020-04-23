@@ -219,7 +219,7 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
       RPA.WebBrowser.Until.elementLocated({
         css: '#listTableCreative > tbody > tr:nth-child(1) > td:nth-child(3)'
       }),
-      60000
+      180000
     );
     await RPA.Logger.info('ID出現しました');
   } catch {
@@ -238,7 +238,7 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
       RPA.WebBrowser.Until.elementLocated({
         css: '#listTableCreative > tbody > tr:nth-child(1) > td:nth-child(3)'
       }),
-      60000
+      180000
     );
   } catch {
     PageStatus[0] = 'bad';
@@ -258,7 +258,7 @@ async function StatusChange(SheetData, SheetWorkingRow) {
         RPA.WebBrowser.Until.elementLocated({
           css: `#listTableCreative > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`
         }),
-        60000
+        180000
       );
       const IDText = await ID.getText();
       if (IDText == SheetData[2]) {
