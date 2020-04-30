@@ -1,10 +1,13 @@
 import RPA from 'ts-rpa';
+const moment = require('moment');
 
 // ＊＊＊＊＊＊＊流用時の変更ポイント＊＊＊＊＊＊＊
 // スプレッドシートID
 const SSID = process.env.Status_CP_SheetID;
 // スプレッドシート名
 const SSName1 = 'CR_時間指定';
+// ログ用シート名を記載
+const LogSheetName = `ログ用`;
 // Slack の通知オンオフ設定 trueなら通知され, falseなら通知オフ
 var SlackFlag = true;
 // ＊＊＊＊＊＊＊流用時の変更ポイント＊＊＊＊＊＊＊
@@ -19,6 +22,9 @@ const BotChannel = process.env.CyberBotChannel;
 // スプレッドシートから読み込む行数を記載する
 const StartRow = 8;
 const LastRow = 1000;
+const SheetWorkingRow = [];
+// 日付の取得
+const DayData = moment().format('YYYY-MM-DD');
 
 // 一度だけログイン処理を行うためのフラッグ
 var LoginFlag = true;
@@ -32,14 +38,12 @@ async function Start() {
     //accessToken: process.env.GOOGLE_ACCESS_TOKEN,
     refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
     tokenType: 'Bearer',
-    expiryDate: parseInt(process.env.GOOGLE_EXPIRY_DATE, 10)
+    expiryDate: parseInt(process.env.GOOGLE_EXPIRY_DATE, 10),
   });
   try {
     await Work();
   } catch {
     // エラー発生時の処理
-    //const DOM = await RPA.WebBrowser.driver.getPageSource();
-    //await RPA.Logger.info(DOM);
     await RPA.WebBrowser.takeScreenshot();
     await RPA.Logger.info(
       'エラー出現.スクリーンショット撮ってブラウザ終了します'
@@ -53,7 +57,6 @@ Start();
 
 async function Work() {
   const firstSheetData = [];
-  const SheetWorkingRow = [];
   const LoopFlag = ['true'];
   while (0 == 0) {
     LoopFlag[0] = 'false';
@@ -114,7 +117,7 @@ async function AJALogin() {
 async function ReadSheet(SheetData, LoopFlag, SheetWorkingRow) {
   const FirstData = await RPA.Google.Spreadsheet.getValues({
     spreadsheetId: `${SSID}`,
-    range: `${SSName1}!A${String(StartRow)}:D${String(LastRow)}`
+    range: `${SSName1}!A${String(StartRow)}:D${String(LastRow)}`,
   });
   // "B列にURL"と"D列に調整入札値"が入っていてかつ、"A列が作業対象"の行だけ取得する
   for (let i in FirstData) {
@@ -142,15 +145,6 @@ async function ReadSheet(SheetData, LoopFlag, SheetWorkingRow) {
       }
     }
   }
-}
-
-// スプレッドシートに 現状ステータス を記載する
-async function PasteSheet(StatusText, SheetWorkingRow) {
-  await RPA.Google.Spreadsheet.setValues({
-    spreadsheetId: `${SSID}`,
-    range: `${SSName1}!A${SheetWorkingRow[0]}:A${SheetWorkingRow[0]}`,
-    values: [[StatusText]]
-  });
 }
 
 // Tabを作成し,2番目に切り替える
@@ -199,7 +193,7 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
   // タブ の位置まで スクロールする
   await RPA.WebBrowser.scrollTo({
     selector:
-      '#main > article > div.contents.ng-scope > section > div.list-ui-group.clear > ul.tab'
+      '#main > article > div.contents.ng-scope > section > div.list-ui-group.clear > ul.tab',
   });
   await RPA.sleep(500);
   // 100件表示させる
@@ -217,14 +211,15 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
   try {
     const ID_no1 = await RPA.WebBrowser.wait(
       RPA.WebBrowser.Until.elementLocated({
-        css: '#listTableCreative > tbody > tr:nth-child(1) > td:nth-child(3)'
+        css: '#listTableCreative > tbody > tr:nth-child(1) > td:nth-child(3)',
       }),
-      300000
+      60000
     );
     await RPA.Logger.info('ID出現しました');
   } catch {
     PageStatus[0] = 'bad';
     await PasteSheet('ページが開けません', SheetWorkingRow);
+    await SetValues_LogSheet_Function(`ページが開けません`);
   }
   await RPA.sleep(300);
   // imp をJavaScriptで直接クリックする
@@ -236,9 +231,9 @@ async function PageMoveing(SheetData, SheetWorkingRow, PageStatus) {
   try {
     const ID_no1 = await RPA.WebBrowser.wait(
       RPA.WebBrowser.Until.elementLocated({
-        css: '#listTableCreative > tbody > tr:nth-child(1) > td:nth-child(3)'
+        css: '#listTableCreative > tbody > tr:nth-child(1) > td:nth-child(3)',
       }),
-      300000
+      60000
     );
   } catch {
     PageStatus[0] = 'bad';
@@ -256,9 +251,9 @@ async function StatusChange(SheetData, SheetWorkingRow) {
     for (let NewNumber = 1; NewNumber < 101; NewNumber++) {
       var ID = await RPA.WebBrowser.wait(
         RPA.WebBrowser.Until.elementLocated({
-          css: `#listTableCreative > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`
+          css: `#listTableCreative > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`,
         }),
-        300000
+        60000
       );
       const IDText = await ID.getText();
       if (IDText == SheetData[2]) {
@@ -266,7 +261,7 @@ async function StatusChange(SheetData, SheetWorkingRow) {
         Allbrake[0] = 'true';
         await RPA.Logger.info('ID一致しました');
         await RPA.WebBrowser.scrollTo({
-          selector: `#listTableCreative > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`
+          selector: `#listTableCreative > tbody > tr:nth-child(${NewNumber}) > td:nth-child(3)`,
         });
         await RPA.sleep(200);
         // 一致したIDの 使用広告 をJavaScriptで直接クリックする
@@ -290,6 +285,7 @@ async function StatusChange(SheetData, SheetWorkingRow) {
             await RPA.WebBrowser.mouseClick(ApplyButton);
             //await RPA.Logger.info('適用ボタン　押したと想定');
             await PasteSheet('完了', SheetWorkingRow);
+            await SetValues_LogSheet_Function(`完了`);
             // 問題なければ完了報告を行う
             await SlackPost(
               `CR_時間指定【ID】 ${SheetData[2]} ステータス変更完了しました`
@@ -299,6 +295,7 @@ async function StatusChange(SheetData, SheetWorkingRow) {
           } catch {
             await RPA.Logger.info('適用ボタン 押せませんでした');
             await PasteSheet('ステータス変更なし', SheetWorkingRow);
+            await SetValues_LogSheet_Function(`ステータス変更なし`);
             // ステータス変更なければ報告を行う
             await SlackPost(
               `CR_時間指定【ID】 ${SheetData[2]} ステータス同じのため、変更なしです`
@@ -322,6 +319,7 @@ async function StatusChange(SheetData, SheetWorkingRow) {
           } catch {
             await RPA.Logger.info('適用ボタン 押せませんでした');
             await PasteSheet('ステータス変更なし', SheetWorkingRow);
+            await SetValues_LogSheet_Function(`ステータス変更なし`);
             // ステータス変更なければ報告を行う
             await SlackPost(
               `CR_時間指定【ID】 ${SheetData[2]} ステータス同じのため、変更なしです`
@@ -347,6 +345,7 @@ async function StatusChange(SheetData, SheetWorkingRow) {
     if (v == 10) {
       // IDが見つからない時は A列をエラー表示に変更
       await PasteSheet('ID不一致', SheetWorkingRow);
+      await SetValues_LogSheet_Function(`ID不一致`);
       break;
     }
   }
@@ -360,7 +359,43 @@ async function SlackPost(Text) {
       token: BotToken,
       text: `${Text}`,
       icon_emoji: ':snowman:',
-      username: 'p1'
+      username: 'p1',
     });
+  }
+}
+
+// スプレッドシートに 現状ステータス を記載する
+async function PasteSheet(StatusText, SheetWorkingRow) {
+  await RPA.Google.Spreadsheet.setValues({
+    spreadsheetId: `${SSID}`,
+    range: `${SSName1}!A${SheetWorkingRow[0]}:A${SheetWorkingRow[0]}`,
+    values: [[StatusText]],
+  });
+}
+
+// ログシートに貼り付ける関数
+async function SetValues_LogSheet_Function(Text) {
+  try {
+    const SheetData = await RPA.Google.Spreadsheet.getValues({
+      spreadsheetId: `${SSID}`,
+      range: `${SSName1}!A${SheetWorkingRow[0]}:I${SheetWorkingRow[0]}`,
+    });
+    SheetData[0][0] = Text; // 完了 or エラー 等の文字を入れる
+    SheetData[0][9] = DayData; // 実行日を入れる
+    SheetData[0][10] = SSName1; // 実行したシート名を入れる
+    const RowData = await RPA.Google.Spreadsheet.getValues({
+      spreadsheetId: `${SSID}`,
+      range: `${LogSheetName}!A1:A10000`,
+    });
+    RPA.Logger.info(`【ログ】${RowData.length + 1} 行目に転記`);
+    await RPA.Google.Spreadsheet.setValues({
+      spreadsheetId: `${SSID}`,
+      range: `${LogSheetName}!A${RowData.length + 1}:K${RowData.length + 1}`,
+      values: SheetData,
+      parseValues: true,
+    });
+    await RPA.sleep(200);
+  } catch (ErrorMessage) {
+    console.log(ErrorMessage);
   }
 }
