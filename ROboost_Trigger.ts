@@ -1,11 +1,14 @@
 import RPA from 'ts-rpa';
 import { By } from 'selenium-webdriver';
+const moment = require('moment');
 
 // ＊＊＊＊＊＊＊＊＊＊ 流用時の変更ポイント ＊＊＊＊＊＊＊＊＊＊
 // スプレッドシートID を記載
 const SSID = process.env.ROboost_0000_SheetID;
 // スプレッドシート名 を記載
 const SSName1 = process.env.ROboost_Trigger_SheetName;
+// ログ用シート名を記載
+const LogSheetName = `ログ用`;
 // Slack へ通知する際の文言 (◯時 や 日中トリガーなど)
 const SlackText = '当日トリガー';
 // Slack の通知オンオフ設定 trueなら通知され, falseなら通知オフ
@@ -21,8 +24,11 @@ const BotChannel = process.env.CyberBotChannel;
 // スプレッドシートから読み込む行数を記載する
 const StartRow = 8;
 const LastRow = 1000;
+const SheetWorkingRow = [];
 // エラーが出現した時用のリスト
 const ErrorText = [];
+// 日付の取得
+const DayData = moment().format('YYYY-MM-DD');
 
 async function Start() {
   // 実行前にダウンロードフォルダを全て削除する
@@ -36,7 +42,6 @@ async function Start() {
     expiryDate: parseInt(process.env.GOOGLE_EXPIRY_DATE, 10),
   });
   const firstSheetData = [];
-  const SheetWorkingRow = [];
   const LoopFlag = ['true'];
   // Slackの通知用フラッグ goodなら完了報告。errorならエラー報告を行う
   const WorkStatus = ['good'];
@@ -238,6 +243,7 @@ async function TargetInputSelect(SheetData, SheetWorkingRow) {
           // 4回リトライしてもID出ない場合はスキップ
           if (i == 4) {
             await SetValues_Function(SheetWorkingRow, `ID表示されませんでした`);
+            await SetValues_LogSheet_Function(`ID表示されませんでした`);
             // 親ループもブレイクさせる
             Allbrake[0] = 'true';
             break;
@@ -251,6 +257,7 @@ async function TargetInputSelect(SheetData, SheetWorkingRow) {
           );
         } catch {
           await SetValues_Function(SheetWorkingRow, `ID不一致`);
+          await SetValues_LogSheet_Function(`ID不一致`);
           // 親ループもブレイクさせる
           Allbrake[0] = 'true';
           break;
@@ -286,6 +293,7 @@ async function TargetInputSelect(SheetData, SheetWorkingRow) {
               await RPA.sleep(800);
               await RPA.Logger.info('【入札調整】値入力完了');
               await SetValues_Function(SheetWorkingRow, `完了`);
+              await SetValues_LogSheet_Function(`完了`);
               break;
             } catch {
               if (j == 4) {
@@ -313,6 +321,7 @@ async function TargetInputSelect(SheetData, SheetWorkingRow) {
       }
       if (v == 19) {
         await SetValues_Function(SheetWorkingRow, `ID不一致`);
+        await SetValues_LogSheet_Function(`ID不一致`);
       }
     }
   } catch (ErrorMessage) {
@@ -331,5 +340,32 @@ async function SetValues_Function(SheetWorkingRow, Text) {
     await RPA.sleep(200);
   } catch (ErrorMessage) {
     ErrorText[0] = ErrorMessage;
+  }
+}
+
+// ログシートに貼り付ける関数
+async function SetValues_LogSheet_Function(Text) {
+  try {
+    const SheetData = await RPA.Google.Spreadsheet.getValues({
+      spreadsheetId: `${SSID}`,
+      range: `${SSName1}!A${SheetWorkingRow[0]}:H${SheetWorkingRow[0]}`,
+    });
+    SheetData[0][0] = Text; // 完了 or エラー 等の文字を入れる
+    SheetData[0][8] = DayData; // 実行日を入れる
+    SheetData[0][9] = SSName1; // 実行したシート名を入れる
+    const RowData = await RPA.Google.Spreadsheet.getValues({
+      spreadsheetId: `${SSID}`,
+      range: `${LogSheetName}!A1:A10000`,
+    });
+    RPA.Logger.info(`【ログ】${RowData.length + 1} 行目に転記`);
+    await RPA.Google.Spreadsheet.setValues({
+      spreadsheetId: `${SSID}`,
+      range: `${LogSheetName}!A${RowData.length + 1}:J${RowData.length + 1}`,
+      values: SheetData,
+      parseValues: true,
+    });
+    await RPA.sleep(200);
+  } catch (ErrorMessage) {
+    console.log(ErrorMessage);
   }
 }
