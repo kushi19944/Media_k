@@ -1,10 +1,13 @@
 import RPA from 'ts-rpa';
+const moment = require('moment');
 
 // ＊＊＊＊＊＊＊流用時の変更ポイント＊＊＊＊＊＊＊
 // スプレッドシートID
 const SSID = process.env.Status_CP_SheetID;
 // スプレッドシート名
 const SSName1 = process.env.Status_CR_SheetName;
+// ログ用シート名を記載
+const LogSheetName = `ログ用`;
 // Slack の通知オンオフ設定 trueなら通知され, falseなら通知オフ
 var SlackFlag = true;
 // ＊＊＊＊＊＊＊流用時の変更ポイント＊＊＊＊＊＊＊
@@ -20,6 +23,9 @@ const SlackText = ['【CRステータス変更】問題なく完了しました'
 // スプレッドシートから読み込む行数を記載する
 const StartRow = 8;
 const LastRow = 1000;
+const SheetWorkingRow = [];
+// 日付の取得
+const DayData = moment().format('YYYY-MM-DD');
 
 async function Start() {
   // 実行前にダウンロードフォルダを全て削除する
@@ -38,8 +44,6 @@ async function Start() {
     await Work();
   } catch {
     // エラー発生時の処理
-    //const DOM = await RPA.WebBrowser.driver.getPageSource();
-    //await RPA.Logger.info(DOM);
     await RPA.WebBrowser.takeScreenshot();
     await RPA.Logger.info(
       'エラー出現.スクリーンショット撮ってブラウザ終了します'
@@ -56,7 +60,6 @@ Start();
 
 async function Work() {
   const firstSheetData = [];
-  const SheetWorkingRow = [];
   const LoopFlag = ['true'];
   await AJALogin();
   while (0 == 0) {
@@ -143,15 +146,6 @@ async function ReadSheet(SheetData, LoopFlag, SheetWorkingRow) {
       }
     }
   }
-}
-
-// スプレッドシートに 現状ステータス を記載する
-async function PasteSheet(StatusText, SheetWorkingRow) {
-  await RPA.Google.Spreadsheet.setValues({
-    spreadsheetId: `${SSID}`,
-    range: `${SSName1}!A${SheetWorkingRow[0]}:A${SheetWorkingRow[0]}`,
-    values: [[StatusText]],
-  });
 }
 
 // Tabを作成し,2番目に切り替える
@@ -286,11 +280,13 @@ async function StatusChange(SheetData, SheetWorkingRow) {
             await RPA.WebBrowser.mouseClick(ApplyButton);
             //await RPA.Logger.info('適用ボタン　押したと想定');
             await PasteSheet('完了', SheetWorkingRow);
+            await SetValues_LogSheet_Function(`完了`);
             await RPA.sleep(3000);
             break;
           } catch {
             await RPA.Logger.info('適用ボタン 押せませんでした');
             await PasteSheet('ステータス変更なし', SheetWorkingRow);
+            await SetValues_LogSheet_Function(`ステータス変更なし`);
             break;
           }
         }
@@ -301,11 +297,13 @@ async function StatusChange(SheetData, SheetWorkingRow) {
             await RPA.WebBrowser.mouseClick(ApplyButton);
             //await RPA.Logger.info('適用ボタン　押したと想定');
             await PasteSheet('完了', SheetWorkingRow);
+            await SetValues_LogSheet_Function(`完了`);
             await RPA.sleep(3000);
             break;
           } catch {
             await RPA.Logger.info('適用ボタン 押せませんでした');
             await PasteSheet('ステータス変更なし', SheetWorkingRow);
+            await SetValues_LogSheet_Function(`完了`);
             break;
           }
         }
@@ -327,6 +325,7 @@ async function StatusChange(SheetData, SheetWorkingRow) {
     if (v == 19) {
       // IDが見つからない時は A列をエラー表示に変更
       await PasteSheet('ID不一致', SheetWorkingRow);
+      await SetValues_LogSheet_Function(`ID不一致`);
       break;
     }
   }
@@ -343,5 +342,41 @@ async function SlackPost(Text) {
       icon_emoji: ':snowman:',
       username: 'p1',
     });
+  }
+}
+
+// スプレッドシートに 現状ステータス を記載する
+async function PasteSheet(StatusText, SheetWorkingRow) {
+  await RPA.Google.Spreadsheet.setValues({
+    spreadsheetId: `${SSID}`,
+    range: `${SSName1}!A${SheetWorkingRow[0]}:A${SheetWorkingRow[0]}`,
+    values: [[StatusText]],
+  });
+}
+
+// ログシートに貼り付ける関数
+async function SetValues_LogSheet_Function(Text) {
+  try {
+    const SheetData = await RPA.Google.Spreadsheet.getValues({
+      spreadsheetId: `${SSID}`,
+      range: `${SSName1}!A${SheetWorkingRow[0]}:I${SheetWorkingRow[0]}`,
+    });
+    SheetData[0][0] = Text; // 完了 or エラー 等の文字を入れる
+    SheetData[0][9] = DayData; // 実行日を入れる
+    SheetData[0][10] = SSName1; // 実行したシート名を入れる
+    const RowData = await RPA.Google.Spreadsheet.getValues({
+      spreadsheetId: `${SSID}`,
+      range: `${LogSheetName}!A1:A10000`,
+    });
+    RPA.Logger.info(`【ログ】${RowData.length + 1} 行目に転記`);
+    await RPA.Google.Spreadsheet.setValues({
+      spreadsheetId: `${SSID}`,
+      range: `${LogSheetName}!A${RowData.length + 1}:K${RowData.length + 1}`,
+      values: SheetData,
+      parseValues: true,
+    });
+    await RPA.sleep(200);
+  } catch (ErrorMessage) {
+    console.log(ErrorMessage);
   }
 }
