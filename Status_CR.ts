@@ -264,8 +264,11 @@ async function StatusChange(SheetData, SheetWorkingRow) {
           `document.querySelector('#listTableCreative > tbody > tr:nth-child(${NewNumber}) > td:nth-child(18) > ul > li:nth-child(2) > button').click()`
         );
         await RPA.sleep(1000);
-        const Yuukou = await RPA.WebBrowser.findElementByCSSSelector(
-          'body > div.modal.fade.ng-isolate-scope.in > div > div > section > div > ul > li > div > label:nth-child(1)'
+        const Yuukou = await RPA.WebBrowser.wait(
+          RPA.WebBrowser.Until.elementLocated({
+            css: `body > div.modal.fade.ng-isolate-scope.in > div > div > section > div > ul > li > div > label:nth-child(1)`,
+          }),
+          10000
         );
         const Mukou = await RPA.WebBrowser.findElementByCSSSelector(
           'body > div.modal.fade.ng-isolate-scope.in > div > div > section > div > ul > li > div > label:nth-child(2)'
@@ -273,6 +276,7 @@ async function StatusChange(SheetData, SheetWorkingRow) {
         const ApplyButton = await RPA.WebBrowser.findElementByCSSSelector(
           'body > div.modal.fade.ng-isolate-scope.in > div > div > section > div > ul > apply-close-button > li:nth-child(1) > button'
         );
+        await RPA.Logger.info(`各チェックボックス/適用ボタン出現`);
         if (SheetData[3] == '有効') {
           await RPA.WebBrowser.mouseClick(Yuukou);
           await RPA.sleep(300);
